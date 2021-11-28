@@ -39,16 +39,18 @@
 \begin{enumerate}
     \item \texttt{CentralizedLinda} sans gestion des callbacks
           \begin{enumerate}
-              \item Savegarde des tuples en mémoire (\texttt{write})
-              \item Méthodes non bloquantes (\texttt{tryTake}, \texttt{tryRead}, \texttt{takeAll}, \texttt{readAll})
-              \item Méthodes bloquantes (\texttt{take}, \texttt{read})
+              \item Savegarde des tuples en mémoire (\texttt{write}) \emph{— Nam}
+              \item Méthodes non bloquantes 
+              (\texttt{tryTake}, \texttt{tryRead}, \texttt{takeAll}, \texttt{readAll}) \emph{— Enzo}
+              \item Méthodes bloquantes (\texttt{take}, \texttt{read}) \emph{— Nam}
           \end{enumerate}
-    \item \texttt{CentralizedLinda} avec callbacks (\texttt{eventRegister})
-    \item Classes client/mono-serveur sans callbacks
-    \item Classes client/mono-serveur avec callbacks
+    \item \texttt{CentralizedLinda} avec callbacks (\texttt{eventRegister}) \emph{— Enzo}
+    \item Classes client/mono-serveur sans callbacks \emph{— Enzo}
+    \item Classes client/mono-serveur avec callbacks \emph{— Nam}
 \end{enumerate}
 
-L'écriture de tests se fera au fur et à mesure.
+L'écriture de tests se fera au fur et à mesure de manière croisée par chacun d'entre nous
+(e.g. Nam écrira les tests sur les méthodes non bloquantes qu'Enzo a implémenté).
 
 \section*{Architecture de principe}
 
