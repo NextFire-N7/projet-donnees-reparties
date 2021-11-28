@@ -1,0 +1,70 @@
+\documentclass[headings=standardclasses,parskip=half]{scrartcl}
+
+\usepackage[french]{babel}
+\usepackage[margin=3cm]{geometry}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\titlehead{
+    \begin{center}
+        \includegraphics[width=5cm]{n7.png}
+    \end{center}
+}
+\subject{Projet Données Réparties\\Sciences du Numérique – Semestre 7}
+\title{Architecture de principe}
+\subtitle{}
+\author{Enzo PETIT \and Nam VU}
+\date{29 novembre 2021}
+\publishers{}
+
+
+\begin{document}
+
+\maketitle
+
+% 1. Un plan de travail initial par groupe.
+% Ce plan de travail doit lister les tâches à réaliser pour le groupe,
+% et indiquer pour chacune des tâches, la personne affectée à la tâche
+% 
+% 2. L'architecture de principe de la plateforme Linda à réaliser. 
+% Ce document ne devrait pas excéder 1 à 2 page(s) A4. 
+% Il devrait comporter
+% * les principales classes envisagées
+% * les difficultés identifiées
+% * au besoin, des diagrammes de séquence à la UML, pour détailler les protocoles un peu complexes.
+% * le type et l'organisation des tests envisagés
+
+\section*{Plan de travail initial}
+
+\begin{enumerate}
+    \item \texttt{CentralizedLinda} sans gestion des callbacks
+          \begin{enumerate}
+              \item Savegarde des tuples en mémoire (\texttt{write})
+              \item Méthodes non bloquantes (\texttt{tryTake}, \texttt{tryRead}, \texttt{takeAll}, \texttt{readAll})
+              \item Méthodes bloquantes (\texttt{take}, \texttt{read})
+          \end{enumerate}
+    \item \texttt{CentralizedLinda} avec callbacks (\texttt{eventRegister})
+    \item Classes client/mono-serveur sans callbacks
+    \item Classes client/mono-serveur avec callbacks
+\end{enumerate}
+
+L'écriture de tests se fera au fur et à mesure.
+
+\section*{Architecture de principe}
+
+\subsection*{Classes envisagées}
+
+Pour la version mémoire partagée à priori rien de plus que la classe \texttt{CentralizedLinda}.
+
+Pour la version client/mono-serveur on aura les classes \texttt{LindaClient},
+\texttt{LindaServer} (interface du serveur) et \texttt{LindaServerImpl} (implémentation du serveur).
+
+\subsection*{Difficultés identifiées}
+
+Quelle structure de donnée Java pour sauvegarder les tuples reçus ?
+
+\subsubsection*{Organisation des tests}
+
+Tests unitaires sous JUnit (ou sans si ça s'avère trop compliqué/long à mettre en place).
+
+\end{document}
