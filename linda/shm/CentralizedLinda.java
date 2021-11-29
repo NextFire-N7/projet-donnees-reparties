@@ -43,13 +43,13 @@ public class CentralizedLinda implements Linda {
     }
 
     private List<Tuple> tupleSpace;
-    private List<Event> readEvents;
     private List<Event> takeEvents;
+    private List<Event> readEvents;
 
     public CentralizedLinda() {
         tupleSpace = new CopyOnWriteArrayList<>();
-        readEvents = new CopyOnWriteArrayList<>();
         takeEvents = new CopyOnWriteArrayList<>();
+        readEvents = new CopyOnWriteArrayList<>();
     }
 
     @Override
