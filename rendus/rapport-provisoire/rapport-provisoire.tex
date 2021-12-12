@@ -1,0 +1,134 @@
+\documentclass[headings=standardclasses,parskip=half]{scrartcl}
+
+\usepackage[french]{babel}
+\usepackage[margin=3cm]{geometry}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\titlehead{
+    \begin{center}
+        \includegraphics[width=5cm]{n7.png}
+    \end{center}
+}
+\subject{Projet Données Réparties\\Sciences du Numérique – Semestre 7}
+\title{Rapport provisoire}
+\subtitle{}
+\author{Enzo PETIT \and Nam VU}
+\date{12 décembre 2021}
+\publishers{}
+
+
+\begin{document}
+
+\maketitle
+
+\section*{Architecture actuelle}
+
+Nous avons à l'heure actuelle implémenté la version mémoire partagée
+de Linda avec la gestion des callbacks.
+
+La classe \texttt{linda.shm.CentralizedLinda} a ainsi été complétée et
+des tests unitaires complets sous JUnit 5 ont été rédigés dans
+\texttt{linda.test.CentralizedLindaTest}.
+
+Une classe auxiliare \texttt{linda.shm.Event} représente un
+\emph{event} enregistré lors d'un appel à \texttt{registerEvent}.
+
+\subsection*{Réalisation}
+
+A l'instanciation, \texttt{CentralizedLinda} initialise trois tableaux
+pour le stockage des tuples (\texttt{tupleSpace}) et les events
+\emph{take} (\texttt{takeEvents}) et \emph{read} (\texttt{readEvents}).
+
+Ces tableaux sont de type \texttt{CopyOnWriteArrayList} qui est une
+variante \emph{thread-safe} de l'\texttt{ArrayList} classique adaptée
+à un contexte concurrent où le nombre de lectures est bien supérieure
+au nombre d'écritures.
+
+Suivent après les détails d'implémentation des différentes opérations,
+plus ou moins dans l'ordre de réalisation :
+
+\subsubsection*{\texttt{tryTake}, \texttt{tryRead}}
+
+Ces deux méthodes sont non bloquantes, on itère simplement sur la liste
+(en partant de la tête) et on renvoie le premier tuple (le plus vieux)
+qui match le template. \texttt{null} est renvoyé si aucun tuple
+actuellement stocké ne correspond.
+
+\subsubsection*{\texttt{takeAll}, \texttt{readAll}}
+
+Même chose que précedemment mais on stocke tous les tuples correspondants
+dans une \texttt{ArrayList} que l'on renvoie à la fin (qui est vide
+si aucun résultat).
+
+\subsubsection*{\texttt{eventRegister}}
+
+En commençant à vouloir implémenter les \texttt{take} et \texttt{read}
+bloquant on s'est demandé comment pouvait-on "proprement" et avec le
+moins d'effort possible bloquer et débloquer les appels : le principe
+des event nous a paru bien adapté pour réaliser cette tâche
+(détails plus loin).
+
+En mode \texttt{IMMEDIATE} un tuple est retourné immédiatement dans
+le callback en cas de match sur l'espace actuel
+(via \texttt{tryTake}/\texttt{tryRead}),
+sinon on range l'event en attente dans le tableau correspondant
+(\texttt{takeEvents} ou \texttt{readEvents}).
+
+\subsubsection*{\texttt{write}}
+
+La méthode \texttt{write} étant la "porte d'entrée" de tous les tuples
+vers l'espace de stockage de Linda, c'est là qu'on en profite pour
+"résoudre" les event en attente le cas échéant.
+
+Ainsi on itère d'abord sur les \emph{read} en attente (\texttt{readEvents}),
+vérifie si le tuple à écrire "match" le template de l'event et le cas
+échéant on appelle le callback correspondant.
+
+Ensuite on fait de même avec les \emph{take} en attente (\texttt{takeEvents})
+mais au premier match (du plus vieux), on résout le callback et on retourne,
+immédiatement. Le tuple n'est pas enregistré et les \emph{take} en attente
+dessus mais plus récents attendront le prochain tuple correspondant.
+
+Finalement si aucun \emph{take} n'attendait le tuple, on le sauvegarde dans
+\texttt{tupleSpace}.
+
+Un tuple en entrée peut ainsi résoudre tous les \emph{read} en attente mais
+qu'un seul \emph{take} en attente, le plus vieux.
+
+\subsubsection*{\texttt{take}, \texttt{read}}
+
+Un \emph{take} ou \emph{read} bloquant revient à enregistrer un event
+\emph{immédiat} dont le callback renvoie le tuple passé en entrée,
+rester bloqué jusqu'à résolution de celui-ci et finalement renvoyer
+son résultat.
+
+On utilise pour faire ça une \texttt{SynchronousQueue}, queue bloquante :
+le callback de l'event correspond à la méthode \texttt{offer} de la queue
+(dépôt non bloquant) qui sera éventuellement appelée lors d'un \emph{write}.
+
+Le \texttt{take}/\texttt{read} reste lui bloqué sur le \texttt{take} de la
+queue et renverra son résultat quand il sera débloqué par un dépôt dans
+la queue.
+
+\subsection*{Tests}
+
+Tous les tests \texttt{Basic} fournis passent en l'état.
+
+Une classe de tests unitaires JUnit 5
+\texttt{linda.test.CentralizedLindaTest} a été écrite.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.5]{tests-results.png}
+    \caption{Résultats des tests définis dans
+        \texttt{linda.test.CentralizedLindaTest}\\
+        (Visual Studio Code + Extension Pack for Java)}
+\end{figure}
+
+\section*{Suite du projet}
+
+Nous n'avons pas encore réfléchi à la version
+client-serveur à l'heure actuelle\dots
+
+\end{document}
