@@ -37,7 +37,7 @@ public class CentralizedLindaTest {
 
     @Test
     void testTakeBlocked() {
-        //On prend un tuple dans un thread
+        // On prend un tuple dans un thread
         Thread t = new Thread() {
             @Override
             public void run() {
@@ -53,7 +53,7 @@ public class CentralizedLindaTest {
             e.printStackTrace();
         }
 
-        //Finalement, on vérifie qu'il n'a pas eu lieu
+        // Finalement, on vérifie qu'il n'a pas eu lieu
         assertFalse(t.getState() == Thread.State.TERMINATED);
     }
 
@@ -61,7 +61,7 @@ public class CentralizedLindaTest {
     @Timeout(5)
     void testTakeUnblocked() {
 
-        //Similaire au test précédent, mais cette fois on vérifie que le take
+        // Similaire au test précédent, mais cette fois on vérifie que le take
         // se débloque si on écrit le tuple après le take.
         Thread t = new Thread() {
             @Override
@@ -74,7 +74,7 @@ public class CentralizedLindaTest {
         // On écrit un tuple correspondant dans l'instance linda
         linda.write(new Tuple("42", false));
 
-        //On attend que la récupération soit effectuée
+        // On attend que la récupération soit effectuée
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -107,14 +107,14 @@ public class CentralizedLindaTest {
             e.printStackTrace();
         }
 
-        //Finalement, on vérifie qu'il n'a pas pu terminer
+        // Finalement, on vérifie qu'il n'a pas pu terminer
         assertFalse(t.getState() == Thread.State.TERMINATED);
     }
 
     @Test
     void testWrite() {
         this.testTakeUnblocked();
-        // On était obligé d'écrire pour pouvoir lire, 
+        // On était obligé d'écrire pour pouvoir lire,
         // donc si le test précédent passe, c'est qu'on a bien pu écrire.
     }
 
@@ -131,7 +131,7 @@ public class CentralizedLindaTest {
 
     @Test
     void testReadBlocked() {
-        //On lit un tuple dans un thread
+        // On lit un tuple dans un thread
         Thread t = new Thread() {
             @Override
             public void run() {
@@ -147,7 +147,7 @@ public class CentralizedLindaTest {
             e.printStackTrace();
         }
 
-        //Finalement, on vérifie qu'elle n'a pas eu lieu
+        // Finalement, on vérifie qu'elle n'a pas eu lieu
         assertFalse(t.getState() == Thread.State.TERMINATED);
     }
 
@@ -155,7 +155,7 @@ public class CentralizedLindaTest {
     @Timeout(5)
     void testReadUnblocked() {
 
-        //Similaire au test précédent, mais cette fois on vérifie que le take
+        // Similaire au test précédent, mais cette fois on vérifie que le take
         // se débloque si on écrit le tuple après le take.
         Thread t = new Thread() {
             @Override
@@ -168,7 +168,7 @@ public class CentralizedLindaTest {
         // On écrit un couple correspondant dans l'instance linda
         linda.write(new Tuple("42", false));
 
-        //On attend que la récupération soit effectuée
+        // On attend que la récupération soit effectuée
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -178,7 +178,7 @@ public class CentralizedLindaTest {
         // On s'assure que le take a été effectué
         assertTrue(t.getState() == Thread.State.TERMINATED);
 
-        //On vérifie que l'élément n'a pas disparu.
+        // On vérifie que l'élément n'a pas disparu.
         linda.take(new Tuple("42", Boolean.class));
     }
 
@@ -189,7 +189,7 @@ public class CentralizedLindaTest {
         // (grâce au timeout)
         Tuple t = linda.tryTake(new Tuple("42", Integer.class));
 
-        //On vérifie qu'on obtient bien l'élément
+        // On vérifie qu'on obtient bien l'élément
         assertNotNull(t);
     }
 
@@ -212,7 +212,6 @@ public class CentralizedLindaTest {
 
         assertNull(t);
     }
-    
 
     @Test
     @Timeout(1)
@@ -221,7 +220,7 @@ public class CentralizedLindaTest {
         // (grâce au timeout)
         Tuple t = linda.tryRead(new Tuple("42", Integer.class));
 
-        //On vérifie qu'on obtient bien l'élément
+        // On vérifie qu'on obtient bien l'élément
         assertNotNull(t);
     }
 
@@ -243,7 +242,7 @@ public class CentralizedLindaTest {
         // On vérifie que le tryRead préserve le tuple de l'espace linda.
         t = linda.tryRead(new Tuple("42", Integer.class));
 
-        //On vérifie qu'on obtient bien l'élément
+        // On vérifie qu'on obtient bien l'élément
         assertNotNull(t);
     }
 
@@ -262,7 +261,7 @@ public class CentralizedLindaTest {
 
     @Test
     void testTakeAllPresentMultiple() {
-        // On ajoute un tuple  compatible
+        // On ajoute un tuple compatible
         linda.write(new Tuple("Departement", 31));
 
         // On vérifie qu'on peut récupérer les deux tuples
@@ -285,7 +284,7 @@ public class CentralizedLindaTest {
         // On take tous les tuples
         linda.takeAll(new Tuple("42", Integer.class));
 
-        //On vérifie qu'ils sont effectivement retirés de l'espace
+        // On vérifie qu'ils sont effectivement retirés de l'espace
         Collection<Tuple> t = linda.takeAll(new Tuple("42", Integer.class));
 
         assertTrue(t.size() == 0);
@@ -293,13 +292,13 @@ public class CentralizedLindaTest {
 
     @Test
     @Timeout(1)
-    void testTakeAllStable () {
+    void testTakeAllStable() {
         // On ajoute un tuple non compatible
         linda.write(new Tuple(true, false));
-        
+
         // On récupère le tuple par défaut avec la méthode takeAll
-        Collection<Tuple> t = linda.takeAll(new Tuple("42", Integer.class));
-        
+        linda.takeAll(new Tuple("42", Integer.class));
+
         // On vérifie que takeAll ne prend que les tuples qui lui correpondent.
         linda.take(new Tuple(Boolean.class, Boolean.class));
     }
@@ -342,7 +341,7 @@ public class CentralizedLindaTest {
         // On read tous les tuples
         linda.readAll(new Tuple("42", Integer.class));
 
-        //On vérifie qu'ils restent présents dans l'espace.
+        // On vérifie qu'ils restent présents dans l'espace.
         Collection<Tuple> t = linda.takeAll(new Tuple("42", Integer.class));
 
         assertTrue(t.size() != 0);

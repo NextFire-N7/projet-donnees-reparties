@@ -3,55 +3,16 @@ package linda.shm;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
-import linda.AsynchronousCallback;
 import linda.Callback;
 import linda.Linda;
 import linda.Tuple;
 
 /** Shared memory implementation of Linda. */
 public class CentralizedLinda implements Linda {
-
-    /**
-     * Représente un "match" en attente avec son template et callback
-     */
-    public class Event {
-
-        private Tuple template;
-        private Callback callback;
-
-        public Event(Tuple template, Callback callback) {
-            this.template = template;
-            this.callback = callback;
-        }
-
-        /**
-         * Teste si un tuple match le template de l'event
-         * 
-         * @param tuple à tester
-         * @return le résultat du match du tuple en entrée avec le template de l'event
-         */
-        public boolean testMatch(Tuple tuple) {
-            return tuple.matches(template);
-        }
-
-        /**
-         * Répond au callback de l'event
-         * 
-         * @param tuple à passer au callback
-         */
-        public void resolve(Tuple tuple) {
-            callback.call(tuple);
-        }
-
-        @Override
-        public String toString() {
-            return template.toString();
-        }
-
-    }
 
     /** Espace des tuples */
     private List<Tuple> tupleSpace;
@@ -100,20 +61,12 @@ public class CentralizedLinda implements Linda {
     }
 
     private Tuple takeRead(Tuple template, eventMode mode) {
-        // Queue bloquante simillaire à un rdv ada
-        SynchronousQueue<Tuple> queue = new SynchronousQueue<>(true);
+        // Queue bloquante
+        BlockingQueue<Tuple> queue = new LinkedBlockingQueue<>();
         try {
             // On passe par le systeme d'event (immédiat) qui permet le blocage si on en a
             // pas trouvé dans le space actuel
-            // AsynchronousCallback sinon risque de bloquage du thread de Linda au niveau du
-            // put qui attendra indéfiniment le take
-            eventRegister(mode, eventTiming.IMMEDIATE, template, new AsynchronousCallback(t -> {
-                try {
-                    queue.put(t);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }));
+            eventRegister(mode, eventTiming.IMMEDIATE, template, queue::offer);
             return queue.take();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
