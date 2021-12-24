@@ -12,11 +12,16 @@ import linda.Linda.eventTiming;
 import linda.Tuple;
 import linda.shm.CentralizedLinda;
 
+/**
+ * Implémentation serveur RMI de Linda.
+ */
 public class LindaServerImpl extends UnicastRemoteObject implements LindaServer {
 
+    /** Noyau du serveur */
     private Linda kernel;
 
     public LindaServerImpl() throws RemoteException {
+        // On instancie un noyau en mémoire partagée
         kernel = new CentralizedLinda();
     }
 
@@ -66,6 +71,7 @@ public class LindaServerImpl extends UnicastRemoteObject implements LindaServer 
     public void eventRegister(eventMode mode, eventTiming timing, Tuple template, RemoteCallback remoteCallback)
             throws RemoteException {
         System.out.println("eventRegister: " + mode + " " + timing + " " + template);
+        // On passe au kernel un callback local qui résoudrera le callback distant
         kernel.eventRegister(mode, timing, template, t -> {
             try {
                 remoteCallback.call(t);

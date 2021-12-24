@@ -15,6 +15,7 @@ import linda.Tuple;
  */
 public class LindaClient implements Linda {
 
+    /** Serveur Linda distant */
     private LindaServer server;
 
     /**
@@ -98,7 +99,14 @@ public class LindaClient implements Linda {
     @Override
     public void eventRegister(eventMode mode, eventTiming timing, Tuple template, Callback callback) {
         try {
-            server.eventRegister(mode, timing, template, new RemoteCallbackAdapter(callback));
+            // On transforme le Callback local du client en RemoteCallback distant pour le
+            // serveur via RemoteCallbackAdapter
+            server.eventRegister(mode, timing, template, new RemoteCallback() {
+                @Override
+                public void call(Tuple t) throws RemoteException {
+                    callback.call(t);
+                }
+            });
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -106,6 +114,7 @@ public class LindaClient implements Linda {
 
     @Override
     public void debug(String prefix) {
+        // Rien à débug
     }
 
 }

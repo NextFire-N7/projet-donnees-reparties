@@ -10,9 +10,7 @@ import linda.Linda.eventTiming;
 import linda.Tuple;
 
 /**
- * Public interface to a Linda implementation.
- * 
- * @author philippe.queinnec@enseeiht.fr
+ * Public interface to a Linda implementation. Version RMI.
  */
 public interface LindaServer extends Remote {
 
@@ -90,10 +88,10 @@ public interface LindaServer extends Remote {
      * arbitrary.
      * Beware of loop with a READ/IMMEDIATE re-registering callback !
      *
-     * @param mode     read or take mode.
-     * @param timing   (potentially) immediate or only future firing.
-     * @param template the filtering template.
-     * @param callback the callback to call if a matching tuple appears.
+     * @param mode           read or take mode.
+     * @param timing         (potentially) immediate or only future firing.
+     * @param template       the filtering template.
+     * @param remoteCallback the callback to call if a matching tuple appears.
      * @throws RemoteException
      */
     public void eventRegister(eventMode mode, eventTiming timing, Tuple template, RemoteCallback remoteCallback)
