@@ -100,13 +100,8 @@ public class LindaClient implements Linda {
     public void eventRegister(eventMode mode, eventTiming timing, Tuple template, Callback callback) {
         try {
             // On transforme le Callback local du client en RemoteCallback distant pour le
-            // serveur
-            server.eventRegister(mode, timing, template, new RemoteCallback() {
-                @Override
-                public void call(Tuple t) throws RemoteException {
-                    callback.call(t);
-                }
-            });
+            // serveur via RemoteCallbackAdapter
+            server.eventRegister(mode, timing, template, new RemoteCallbackAdapter(callback));
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
