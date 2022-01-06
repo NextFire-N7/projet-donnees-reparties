@@ -2,6 +2,7 @@ package linda.server;
 
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Collection;
 
 import linda.Callback;
@@ -14,6 +15,24 @@ import linda.Tuple;
  * is connected to.
  */
 public class LindaClient implements Linda {
+
+    /**
+     * Transforme un callback local en callback distant.
+     */
+    private class RemoteCallbackAdapter extends UnicastRemoteObject implements RemoteCallback {
+
+        private Callback callback;
+
+        public RemoteCallbackAdapter(Callback callback) throws RemoteException {
+            this.callback = callback;
+        }
+
+        @Override
+        public void call(Tuple t) throws RemoteException {
+            callback.call(t);
+        }
+
+    }
 
     /** Serveur Linda distant */
     private LindaServer server;
