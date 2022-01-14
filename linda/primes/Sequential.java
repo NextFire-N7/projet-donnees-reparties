@@ -1,22 +1,41 @@
 package linda.primes;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.concurrent.Callable;
 
-public class Sequential {
+import linda.Linda;
+import linda.Tuple;
+import linda.shm.CentralizedLinda;
 
-    public static void main(String[] args) {
-        int n = Integer.parseInt(args[0]);
-        boolean[] isNotPrime = new boolean[n + 1];
-        List<Integer> primes = new ArrayList<>();
-        for (int i = 2; i <= n; i++) {
-            if (!isNotPrime[i]) {
+public class Sequential implements Callable<Collection<Integer>> {
+
+    private int start;
+    private int end;
+    private Linda linda;
+
+    public Sequential(int start, int end) {
+        this.start = start;
+        this.end = end;
+        linda = new CentralizedLinda();
+    }
+
+    public Sequential(int end) {
+        this(2, end);
+    }
+
+    @Override
+    public Collection<Integer> call() {
+        Collection<Integer> primes = new ArrayList<>();
+        for (int i = start; i <= end; i++) {
+            if (linda.tryRead(new Tuple(i)) == null) {
                 primes.add(i);
-                for (int j = i * i; j <= n; j += i) {
-                    isNotPrime[j] = true;
+                for (int j = i + i; j <= end; j += i) {
+                    linda.write(new Tuple(j));
                 }
             }
         }
+        return primes;
     }
 
 }
