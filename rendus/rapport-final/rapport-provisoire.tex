@@ -95,6 +95,10 @@ le callback en cas de match sur l'espace actuel
 sinon on range l'event en attente dans le tableau correspondant
 (\texttt{takeEvents} ou \texttt{readEvents}).
 
+Le callback est transformé en amont en \texttt{AsynchronousCallback}
+afin d'éviter les problèmes liés au blocage du thread principal ou
+d'enregistrements récursifs de callbacks.
+
 \subsubsection{\texttt{write}}
 
 La méthode \texttt{write} étant la "porte d'entrée" de tous les tuples
@@ -147,6 +151,35 @@ Une classe de tests unitaires \href{https://junit.org/junit5/}{JUnit 5}
 \end{figure}
 
 \section{Version client / mono-serveur}
+
+\subsection{Serveur}
+
+Une interface \texttt{LindaServer} a été définie, étandant \texttt{Remote},
+et reprend les méthodes définies dans l'interface \texttt{Linda} à la
+différence que toutes les méthodes \texttt{throws RemoteException} et
+que \texttt{eventRegister} prend en paramètre un \texttt{eventRegister}.
+
+\texttt{eventRegister} est une interface qui étand aussi \texttt{Remote}
+et représente un callback à exécuter sur le client.
+
+L'implémentation de \texttt{LindaServer} est rédigée dans
+\texttt{LindaServerImpl}. Cette classe initialise un noyau Linda en
+mémoire partagée et transmets directement tous les appels distants au
+noyau à l'exception du \texttt{eventRegister} : pour cette méthode,
+on transmet au kernel un callback local qui résoudra le callback distant.
+Ainsi tout est transparant pour le noyau en mémoire partagée.
+
+\subsection{Client}
+
+De la même manière \texttt{LindaClient} récupère un \texttt{LindaServer}
+en RMI puis fonctionne de manière transparente pour les appplications en
+local en ne faisant que transferer directement toutes les requêtes au
+serveur distant.
+
+Exception est encore faite pour \texttt{eventRegister} qui est un peu plus
+complexe: on envoie au serveur un \texttt{RemoteCallback} via
+\texttt{RemoteCallbackAdapter} qui s'occupera de répondre au callback
+local côté client.
 
 \section{Applications}
 

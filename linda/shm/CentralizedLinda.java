@@ -163,6 +163,8 @@ public class CentralizedLinda implements Linda {
 
     @Override
     public void eventRegister(eventMode mode, eventTiming timing, Tuple template, Callback callback) {
+        // Le callback sera résolu dans un autre thread: évite les blocages et les
+        // problèmes liés aux enregistrements de callback récursifs
         Callback asyncCallback = new AsynchronousCallback(callback);
 
         if (timing == eventTiming.IMMEDIATE) {
