@@ -22,27 +22,41 @@ public class Manager implements Runnable {
         this.linda = linda;
         this.pathname = pathname;
         this.search = search;
+        this.reqUUID = UUID.randomUUID();
     }
 
     private void addSearch(String search) {
         this.search = search;
-        this.reqUUID = UUID.randomUUID();
         System.out.println("Search " + this.reqUUID + " for " + this.search);
         linda.eventRegister(Linda.eventMode.TAKE, Linda.eventTiming.IMMEDIATE, new Tuple(Code.Result, this.reqUUID, String.class, Integer.class), new CbGetResult());
-        linda.write(new Tuple(Code.Request, this.reqUUID, this.search));
+        linda.write(new Tuple(Code.Request, this.reqUUID, this.search, 0));
     }
 
     private void loadData(String pathname) {
         try (Stream<String> stream = Files.lines(Paths.get(pathname))) {
-            stream.limit(10000).forEach(s -> linda.write(new Tuple(Code.Value, s.trim())));
+            stream.limit(10000).forEach(s -> linda.write(new Tuple(Code.Value, this.reqUUID, s.trim())));
         } catch (java.io.IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void waitForEndSearch() {
-        linda.take(new Tuple(Code.Searcher, "done", this.reqUUID));
-        linda.take(new Tuple(Code.Request, this.reqUUID, String.class)); // remove query
+    // synchronized ne pose ici aucun problème : le wait est souvent appelé et relache le verrou.
+    // La partie critique est très courte en temps d'exécution.
+    synchronized private void waitForEndSearch() {
+        //Wait for a searcher to pick up the request
+        linda.take(new Tuple(Code.Searcher, "searching", this.reqUUID));
+
+        //Then wait until no workers are still affected to the task (either done or interrupted).
+        do {
+            try {
+                //wait for new results
+                this.wait(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        } while (!linda.takeAll(new Tuple(Code.Searcher, "searching", this.reqUUID)).isEmpty());
+
+        linda.take(new Tuple(Code.Request, this.reqUUID, String.class, Integer.class)); // remove query
         System.out.println("query done");
     }
 

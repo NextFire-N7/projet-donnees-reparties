@@ -8,25 +8,37 @@ public class Searcher implements Runnable {
 
     private Linda linda;
 
+    private static final int MAX_SEARCHERS = 3; // arbitrary.
+
     public Searcher(Linda linda) {
         this.linda = linda;
     }
 
     public void run() {
         System.out.println("Ready to do a search");
-        Tuple treq = linda.read(new Tuple(Code.Request, UUID.class, String.class));
+        Tuple treq = linda.take(new Tuple(Code.Request, UUID.class, String.class, Integer.class));
         UUID reqUUID = (UUID)treq.get(1);
         String req = (String) treq.get(2);
+
+        // if there can be more parrallel searches, re-add it.
+        int nbSearchers = (int)treq.get(3);
+        if ( nbSearchers < MAX_SEARCHERS - 1){
+            treq.set(3, nbSearchers+1);
+            linda.write(treq);
+        }
         Tuple tv;
         System.out.println("Looking for: " + req);
-        while ((tv = linda.tryTake(new Tuple(Code.Value, String.class))) != null) {
-            String val = (String) tv.get(1);
+        while ((tv = linda.tryTake(new Tuple(Code.Value, reqUUID, String.class))) != null) {
+            String val = (String) tv.get(2);
             int dist = getLevenshteinDistance(req, val);
             if (dist < 10) { // arbitrary
                 linda.write(new Tuple(Code.Result, reqUUID, val, dist));
             }
+
+            // signal the manager that this searcher is working on its request
+            linda.write(new Tuple(Code.Searcher, "searching", reqUUID));
         }
-        linda.write(new Tuple(Code.Searcher, "done", reqUUID));
+        //linda.write(new Tuple(Code.Searcher, "done", reqUUID));
     }
     
     /*****************************************************************/
