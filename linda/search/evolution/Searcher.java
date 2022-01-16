@@ -8,7 +8,7 @@ public class Searcher implements Runnable {
 
     private Linda linda;
 
-    private static final int MAX_SEARCHERS = 3; // arbitrary.
+    private static final int MAX_SEARCHERS = 1; // arbitrary.
 
     public Searcher(Linda linda) {
         this.linda = linda;
@@ -22,7 +22,7 @@ public class Searcher implements Runnable {
 
         // if there can be more parrallel searches, re-add it.
         int nbSearchers = (int)treq.get(3);
-        if ( nbSearchers < MAX_SEARCHERS - 1){
+        if ( nbSearchers < MAX_SEARCHERS){
             treq.set(3, nbSearchers+1);
             linda.write(treq);
         }
