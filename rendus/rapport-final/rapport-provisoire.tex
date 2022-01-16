@@ -187,6 +187,87 @@ local côté client.
 
 \subsection{Recherche approximative dans un fichier}
 
+Cette application recherche dans un fichier de mots celui qui est le plus "proche" du mot donné en entrée.
+
+Une base de l'application était déjà faite, mais celle-ci devait être étendue avec d'autres fonctionnalités.
+
+Pour chaque nouvelle fonctionnalité, une explication de l'implémentation se trouve
+
+\subsubsection{Simultanéité des chercheurs}
+
+On voulait permettre à l'application d'autoriser plusieurs chercheurs en simultané sur une même requête.
+Cela a été fait en modifiant plusieurs choses.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.5]{plusieurs-chercheurs.png}
+    \caption{Exemple d'exécution avec plusieurs chercheurs sur la même requête 
+    - 'abbey' dans un dictionnaire anglais}
+\end{figure}
+
+Tout d'abord, le tuple de requête contient un nouveau paramètre : le nombre de chercheurs ayant pris la recherche en charge.
+Le manager initialise ce paramètre à 0.
+
+Ensuite, quand un chercheur trouve un tel tuple, il le prend, regarde si il reste de la place pour d'autre chercheurs sur cette recherche,
+et le redépose avec une valeur mise à jour dans l'espace le cas échéant.
+Dans tous les cas, le chercheur va ensuite travailler normalement, mais au lieu de notifier la fin de son travail, il notifie qu'il 
+est toujours opérationnel.
+
+Enfin, le manager va effectuer une attente semi-active pour savoir si il reste encore des chercheurs affectés à sa requête.
+Quand il n'y en a plus, on considère la recherche comme terminée.
+
+Le choix de l'attente active a été faite dans le cas où le chercheur viendrait à "planter", car la consigne spécifiait un
+ "arrêt arbitraire de chercheurs", que nous avons interprété en tant que tel. Dans ce cas, toute sorte 
+de notification de fin de travail est impossible. 
+
+Si cela n'était pas ce qui était désiré, nous avons pris l'autre partie pour la rétraction d'un manager 
+(voir la partie concernée ci-dessous).
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.5]{arret-chercheurs.png}
+    \caption{Exemple d'exécution avec arrêt prématuré des \texttt{Searcher}s - 
+    Le \texttt{manager} détecte l'absence de chercheur restants et termine}
+\end{figure}
+
+\subsubsection{Simultanéité des managers}
+
+L'on souhaitait ici avoir plusieurs managers déposant des requêtes différentes.
+
+La simple solution pour permettre cela était de marquer les données avec l'UUID de la requête.
+
+Il fallait également attendre la prise en charge de la recherche par un des chercheurs avant 
+de considérer la fin de celle-ci.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.5]{tests-results.png}
+    \caption{Exemple d'exécution avec 2 \texttt{Searcher}s 
+    et 2 \texttt{Manager}s - 'abbey' (présent) et 'abricot' (absent)}
+\end{figure}
+
+\subsubsection{Linda version serveur}
+
+Ici, rien n'est à modifier, le code marchait à la perfection en étant simplement transposé, 
+même si les managers et les chercheurs sont dans des clients différents.
+
+\subsubsection{Retrait de managers}
+
+En contraste avec la vision prise pour les chercheurs, on considère ici que les managers se "retirent" 
+moins brusquement.
+
+Au lieu de faire une attente active du côté des chercheurs, on décide alors la présence dans 
+l'espace linda d'une variable "de garde" que l'on retire quand on souhaite interrompre la recherche.
+
+Pour permettre d'indiquer un temps d'attente maximum, l'on surcharge le constructeur avec un nouveau 
+paramètre.
+
+On peut alors déclarer un objet partagé et attendre un temps maximal à l'aide de la fonction \texttt{wait()}, 
+et reprendre l'exécution plus tôt à l'aide de la fonction associée \texttt{notify()}.
+
+De plus, si un chercheur est interrompu dans sa recherche, il est réinitialisé et attend une nouvelle
+requête.
+
 \section{Conclusion}
 
 \end{document}
