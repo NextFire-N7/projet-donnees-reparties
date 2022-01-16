@@ -1,4 +1,4 @@
-package linda.search.basic;
+package linda.search.evolution;
 
 import linda.*;
 import java.util.Arrays;

@@ -1,4 +1,4 @@
-package linda.search.basic;
+package linda.search.evolution;
 public enum Code {
     Request, // Request, UUID, String
     Value,   // Value, String
