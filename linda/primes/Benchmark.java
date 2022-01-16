@@ -4,7 +4,7 @@ import java.util.Collection;
 
 public class Benchmark {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         // 1229 primes entre 0 et 10000
 
         int end = Integer.parseInt(args[0]);

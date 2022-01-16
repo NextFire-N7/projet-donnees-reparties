@@ -8,6 +8,9 @@ import linda.Linda;
 import linda.Tuple;
 import linda.shm.CentralizedLinda;
 
+/**
+ * Classic and dumb sequential algorithm.
+ */
 public class Sequential implements Callable<Collection<Integer>> {
 
     private int start;
