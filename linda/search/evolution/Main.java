@@ -15,6 +15,12 @@ public class Main {
         (new Thread(manager)).start();
         (new Thread(searcher)).start();
         (new Thread(searcher)).start();
+        try {
+            Thread.sleep(0000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         Manager manager2 = new Manager(linda, args[1], "abricot");
         (new Thread(manager2)).start();
     }

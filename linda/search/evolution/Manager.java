@@ -1,8 +1,6 @@
 package linda.search.evolution;
 
 import java.util.UUID;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.stream.Stream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -18,6 +16,9 @@ public class Manager implements Runnable {
     private int bestvalue = Integer.MAX_VALUE; // lower is better
     private String bestresult;
 
+    private int max_time = 10;
+    private boolean has_finished = false;
+
     public Manager(Linda linda, String pathname, String search) {
         this.linda = linda;
         this.pathname = pathname;
@@ -25,9 +26,15 @@ public class Manager implements Runnable {
         this.reqUUID = UUID.randomUUID();
     }
 
+    public Manager(Linda linda, String pathname, String search, int max_time_millis) {
+        this(linda, pathname, search);
+        this.max_time = max_time_millis;
+    }
+
     private void addSearch(String search) {
         this.search = search;
         System.out.println("Search " + this.reqUUID + " for " + this.search);
+        linda.write(new Tuple(Code.Manager, this.reqUUID));
         linda.eventRegister(Linda.eventMode.TAKE, Linda.eventTiming.IMMEDIATE, new Tuple(Code.Result, this.reqUUID, String.class, Integer.class), new CbGetResult());
         linda.write(new Tuple(Code.Request, this.reqUUID, this.search, 0));
     }
@@ -40,23 +47,44 @@ public class Manager implements Runnable {
         }
     }
 
-    // synchronized ne pose ici aucun problème : le wait est souvent appelé et relache le verrou.
-    // La partie critique est très courte en temps d'exécution.
-    synchronized private void waitForEndSearch() {
-        //Wait for a searcher to pick up the request
-        linda.take(new Tuple(Code.Searcher, "searching", this.reqUUID));
+    private void waitForEndSearch() {
+        // Search time-out example
+        Object mutex = new Object();
+        Thread t = new Thread() {
+            public void run() {
+                //Wait for a searcher to pick up the request
+                linda.take(new Tuple(Code.Searcher, "searching", reqUUID));
 
-        //Then wait until no workers are still affected to the task (either done or interrupted).
-        do {
-            try {
-                //wait for new results
-                this.wait(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                //Then wait until no workers are still affected to the task (either done or interrupted).
+                do {
+                    try {
+                        //wait for new results
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                } while (!linda.takeAll(new Tuple(Code.Searcher, "searching", reqUUID)).isEmpty());
+
+                // Seach has ended => Notify to continue before the timeout.
+                synchronized(mutex){
+                    mutex.notify();
+                }
+        }};
+        t.start();
+        try {
+            synchronized(mutex){
+                // Wait on timeout or end of search
+                if (this.max_time > 0)
+                    mutex.wait(max_time);
             }
-        } while (!linda.takeAll(new Tuple(Code.Searcher, "searching", this.reqUUID)).isEmpty());
+        } catch (InterruptedException err) {
+            throw new RuntimeException(err);
+        }
 
-        linda.take(new Tuple(Code.Request, this.reqUUID, String.class, Integer.class)); // remove query
+        has_finished = true;
+        // signal end of search
+        linda.take(new Tuple(Code.Manager, reqUUID));
+        linda.tryTake(new Tuple(Code.Request, reqUUID, String.class, Integer.class)); // remove query
         System.out.println("query done");
     }
 
@@ -69,7 +97,9 @@ public class Manager implements Runnable {
                 bestresult = s;
                 System.out.println("New best (" + bestvalue + "): \"" + bestresult + "\"");
             }
-            linda.eventRegister(Linda.eventMode.TAKE, Linda.eventTiming.IMMEDIATE, new Tuple(Code.Result, reqUUID, String.class, Integer.class), this);
+            // No more events if the search has ended.
+            if (!has_finished)
+                linda.eventRegister(Linda.eventMode.TAKE, Linda.eventTiming.IMMEDIATE, new Tuple(Code.Result, reqUUID, String.class, Integer.class), this);
         }
     }
 
