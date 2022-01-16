@@ -152,6 +152,8 @@ Une classe de tests unitaires \href{https://junit.org/junit5/}{JUnit 5}
 
 \section{Version client / mono-serveur}
 
+\textit{Package \texttt{linda.server}}
+
 \subsection{Serveur}
 
 Une interface \texttt{LindaServer} a été définie, étandant \texttt{Remote},
@@ -185,7 +187,49 @@ local côté client.
 
 \subsection{Calcul des nombres premiers}
 
+\textit{Package \texttt{linda.primes}}
+
+\subsubsection{Séquentiel}
+
+La classe \texttt{Sequential} implémente une version sequentielle basique
+du crible d'Erathosthène en utilisant Linda.
+On parcours les nombres de 2 à \(n\) : si il n'est pas présent dans Linda
+(par \texttt{tryRead}) alors le nombre est premier et on rajoute tous
+ses multiples dans Linda.
+
+\subsubsection{Parallèle}
+
+On fournit dans \texttt{Parallel} une tentative de parallèlisation de
+cet algorithme peu parallèlisable.
+
+On commence par enregistrer dans Linda tous les nombres en les marquant
+premiers (initialisation du crible).
+
+Autant de \texttt{Worker}s que de nombres sont ensuite créés : ils
+s'occupent de retirer leurs multiples de Linda et abandonnent leur
+tâche si leur nombre de départ s'avère non premier (retiré par un autre
+\texttt{Worker}).
+Tous ces \texttt{Worker}s sont exécutés dans des
+threads grâce à un \texttt{ExecutorService} initialisé par
+\texttt{Executors.newWorkStealingPool}.
+
+Enfin, dans le thread principal on se bloque jusqu'à
+l'éxecution complète de tous les \texttt{Worker}s.
+
+\texttt{Résultats}
+
+En testant la recherche jusqu'à 10000 il est clair que la parallèlisation
+du crible d'Erathosthène est peu efficace. On obtient un temps de traitement
+triple par rapport à la version séquentielle qui s'explique par l'overhead
+généré par la création de threads et la répétitions d'opérations : ne pouvant
+savoir si un nombre et premier dès le départ, on commence malgré tout
+à marquer ses multiples.
+Aussi notre implémentation de Linda fait que les lectures sont peu efficaces
+car on itère sur toute la liste à chaque accès.
+
 \subsection{Recherche approximative dans un fichier}
+
+\textit{Package \texttt{linda.search.evolution}}
 
 Cette application recherche dans un fichier de mots celui qui est le plus "proche" du mot donné en entrée.
 
@@ -201,8 +245,8 @@ Cela a été fait en modifiant plusieurs choses.
 \begin{figure}[h]
     \centering
     \includegraphics[scale=0.5]{plusieurs-chercheurs.png}
-    \caption{Exemple d'exécution avec plusieurs chercheurs sur la même requête 
-    - 'abbey' dans un dictionnaire anglais}
+    \caption{Exemple d'exécution avec plusieurs chercheurs sur la même requête
+        - 'abbey' dans un dictionnaire anglais}
 \end{figure}
 
 Tout d'abord, le tuple de requête contient un nouveau paramètre : le nombre de chercheurs ayant pris la recherche en charge.
@@ -210,24 +254,24 @@ Le manager initialise ce paramètre à 0.
 
 Ensuite, quand un chercheur trouve un tel tuple, il le prend, regarde si il reste de la place pour d'autre chercheurs sur cette recherche,
 et le redépose avec une valeur mise à jour dans l'espace le cas échéant.
-Dans tous les cas, le chercheur va ensuite travailler normalement, mais au lieu de notifier la fin de son travail, il notifie qu'il 
+Dans tous les cas, le chercheur va ensuite travailler normalement, mais au lieu de notifier la fin de son travail, il notifie qu'il
 est toujours opérationnel.
 
 Enfin, le manager va effectuer une attente semi-active pour savoir si il reste encore des chercheurs affectés à sa requête.
 Quand il n'y en a plus, on considère la recherche comme terminée.
 
 Le choix de l'attente active a été faite dans le cas où le chercheur viendrait à "planter", car la consigne spécifiait un
- "arrêt arbitraire de chercheurs", que nous avons interprété en tant que tel. Dans ce cas, toute sorte 
-de notification de fin de travail est impossible. 
+"arrêt arbitraire de chercheurs", que nous avons interprété en tant que tel. Dans ce cas, toute sorte
+de notification de fin de travail est impossible.
 
-Si cela n'était pas ce qui était désiré, nous avons pris l'autre partie pour la rétraction d'un manager 
+Si cela n'était pas ce qui était désiré, nous avons pris l'autre partie pour la rétraction d'un manager
 (voir la partie concernée ci-dessous).
 
 \begin{figure}[h]
     \centering
     \includegraphics[scale=0.5]{arret-chercheurs.png}
-    \caption{Exemple d'exécution avec arrêt prématuré des \texttt{Searcher}s - 
-    Le \texttt{manager} détecte l'absence de chercheur restants et termine}
+    \caption{Exemple d'exécution avec arrêt prématuré des \texttt{Searcher}s -
+        Le \texttt{manager} détecte l'absence de chercheur restants et termine}
 \end{figure}
 
 \subsubsection{Simultanéité des managers}
@@ -236,38 +280,36 @@ L'on souhaitait ici avoir plusieurs managers déposant des requêtes différente
 
 La simple solution pour permettre cela était de marquer les données avec l'UUID de la requête.
 
-Il fallait également attendre la prise en charge de la recherche par un des chercheurs avant 
+Il fallait également attendre la prise en charge de la recherche par un des chercheurs avant
 de considérer la fin de celle-ci.
 
 \begin{figure}[h]
     \centering
     \includegraphics[scale=0.5]{tests-results.png}
-    \caption{Exemple d'exécution avec 2 \texttt{Searcher}s 
-    et 2 \texttt{Manager}s - 'abbey' (présent) et 'abricot' (absent)}
+    \caption{Exemple d'exécution avec 2 \texttt{Searcher}s
+        et 2 \texttt{Manager}s - 'abbey' (présent) et 'abricot' (absent)}
 \end{figure}
 
 \subsubsection{Linda version serveur}
 
-Ici, rien n'est à modifier, le code marchait à la perfection en étant simplement transposé, 
+Ici, rien n'est à modifier, le code marchait à la perfection en étant simplement transposé,
 même si les managers et les chercheurs sont dans des clients différents.
 
 \subsubsection{Retrait de managers}
 
-En contraste avec la vision prise pour les chercheurs, on considère ici que les managers se "retirent" 
+En contraste avec la vision prise pour les chercheurs, on considère ici que les managers se "retirent"
 moins brusquement.
 
-Au lieu de faire une attente active du côté des chercheurs, on décide alors la présence dans 
+Au lieu de faire une attente active du côté des chercheurs, on décide alors la présence dans
 l'espace linda d'une variable "de garde" que l'on retire quand on souhaite interrompre la recherche.
 
-Pour permettre d'indiquer un temps d'attente maximum, l'on surcharge le constructeur avec un nouveau 
+Pour permettre d'indiquer un temps d'attente maximum, l'on surcharge le constructeur avec un nouveau
 paramètre.
 
-On peut alors déclarer un objet partagé et attendre un temps maximal à l'aide de la fonction \texttt{wait()}, 
+On peut alors déclarer un objet partagé et attendre un temps maximal à l'aide de la fonction \texttt{wait()},
 et reprendre l'exécution plus tôt à l'aide de la fonction associée \texttt{notify()}.
 
 De plus, si un chercheur est interrompu dans sa recherche, il est réinitialisé et attend une nouvelle
 requête.
-
-\section{Conclusion}
 
 \end{document}
