@@ -30,17 +30,29 @@
 
 \section{Introduction}
 
-Nous avons à l'heure actuelle implémenté la version mémoire partagée
-de Linda avec la gestion des callbacks.
+Le projet Linda a pour but de réaliser un espace partagé de données
+typées.
 
-La classe \texttt{linda.shm.CentralizedLinda} a ainsi été complétée et
-des tests unitaires sous \href{https://junit.org/junit5/}{JUnit 5}
+Une version à mémoire partagée avec gestion de callback a été réalisée
+ainsi qu'une version client-serveur en RMI se reposant sur cette dernière.
+
+Pour la première version, la classe \texttt{linda.shm.CentralizedLinda}
+a ainsi été complétée et des tests unitaires sous
+\href{https://junit.org/junit5/}{JUnit 5}
 ont été rédigés dans \texttt{linda.test.CentralizedLindaTest}.
 
-Une classe auxiliare \texttt{linda.shm.Event} représente un
-\emph{event} enregistré lors d'un appel à \texttt{registerEvent}.
+La version client-serveur se trouve quand à elle dans le package
+\texttt{linda.server} et utilise la version \textit{shm} inchangée pour
+la partie serveur.
+
+Enfin quelques applications utilisant Linda ont été réalisées
+telle que la recherche de nombre premiers selon l'algorithme du
+crible d'Erathosthène, en séquentiel et parallèle, ainsi que la
+parallèlisation de l'application de recherche.
 
 \section{Version en mémoire partagée}
+
+\textit{Cette section reprend le rapport provisoire de décembre dernier.}
 
 \subsection{Réalisation}
 
@@ -111,7 +123,7 @@ Un \emph{take} ou \emph{read} bloquant revient à enregistrer un event
 rester bloqué jusqu'à résolution de celui-ci et finalement renvoyer
 son résultat.
 
-On utilise pour faire ça une \texttt{SynchronousQueue}, queue bloquante :
+On utilise pour faire ça une \texttt{LinkedBlockingQueue}, queue bloquante :
 le callback de l'event correspond à la méthode \texttt{offer} de la queue
 (dépôt non bloquant) qui sera éventuellement appelée lors d'un \emph{write}.
 
