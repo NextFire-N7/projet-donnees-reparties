@@ -84,7 +84,7 @@ si aucun résultat).
 \subsubsection{\texttt{eventRegister}}
 
 En commençant à vouloir implémenter les \texttt{take} et \texttt{read}
-bloquant on s'est demandé comment pouvait-on "proprement" et avec le
+bloquant on s'est demandé comment pouvait-on \textit{proprement} et avec le
 moins d'effort possible bloquer et débloquer les appels : le principe
 des event nous a paru bien adapté pour réaliser cette tâche
 (détails plus loin).
@@ -101,12 +101,12 @@ d'enregistrements récursifs de callbacks.
 
 \subsubsection{\texttt{write}}
 
-La méthode \texttt{write} étant la "porte d'entrée" de tous les tuples
+La méthode \texttt{write} étant la \textit{porte d'entrée} de tous les tuples
 vers l'espace de stockage de Linda, c'est là qu'on en profite pour
-"résoudre" les event en attente le cas échéant.
+\textit{résoudre} les event en attente le cas échéant.
 
 Ainsi on itère d'abord sur les \emph{read} en attente (\texttt{readEvents}),
-vérifie si le tuple à écrire "match" le template de l'event et le cas
+vérifie si le tuple à écrire \textit{match} le template de l'event et le cas
 échéant on appelle le callback correspondant.
 
 Ensuite on fait de même avec les \emph{take} en attente (\texttt{takeEvents})
@@ -231,11 +231,11 @@ car on itère sur toute la liste à chaque accès.
 
 \textit{Package \texttt{linda.search.evolution}}
 
-Cette application recherche dans un fichier de mots celui qui est le plus "proche" du mot donné en entrée.
+Cette application recherche dans un fichier de mots celui qui est le plus \textit{proche} du mot donné en entrée.
 
 Une base de l'application était déjà faite, mais celle-ci devait être étendue avec d'autres fonctionnalités.
 
-Pour chaque nouvelle fonctionnalité, une explication de l'implémentation se trouve
+Pour chaque nouvelle fonctionnalité, une explication de l'implémentation se trouve dans ce qui suit.
 
 \subsubsection{Simultanéité des chercheurs}
 
@@ -260,8 +260,8 @@ est toujours opérationnel.
 Enfin, le manager va effectuer une attente semi-active pour savoir si il reste encore des chercheurs affectés à sa requête.
 Quand il n'y en a plus, on considère la recherche comme terminée.
 
-Le choix de l'attente active a été faite dans le cas où le chercheur viendrait à "planter", car la consigne spécifiait un
-"arrêt arbitraire de chercheurs", que nous avons interprété en tant que tel. Dans ce cas, toute sorte
+Le choix de l'attente active a été faite dans le cas où le chercheur viendrait à \textit{planter}, car la consigne spécifiait un
+\textit{arrêt arbitraire de chercheurs}, que nous avons interprété en tant que tel. Dans ce cas, toute sorte
 de notification de fin de travail est impossible.
 
 Si cela n'était pas ce qui était désiré, nous avons pris l'autre partie pour la rétraction d'un manager
@@ -285,7 +285,7 @@ de considérer la fin de celle-ci.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.5]{tests-results.png}
+    \includegraphics[scale=0.5]{plusieurs-managers.png}
     \caption{Exemple d'exécution avec 2 \texttt{Searcher}s
         et 2 \texttt{Manager}s - 'abbey' (présent) et 'abricot' (absent)}
 \end{figure}
@@ -297,11 +297,11 @@ même si les managers et les chercheurs sont dans des clients différents.
 
 \subsubsection{Retrait de managers}
 
-En contraste avec la vision prise pour les chercheurs, on considère ici que les managers se "retirent"
+En contraste avec la vision prise pour les chercheurs, on considère ici que les managers se \textit{retirent}
 moins brusquement.
 
 Au lieu de faire une attente active du côté des chercheurs, on décide alors la présence dans
-l'espace linda d'une variable "de garde" que l'on retire quand on souhaite interrompre la recherche.
+l'espace linda d'une variable \textit{de garde} que l'on retire quand on souhaite interrompre la recherche.
 
 Pour permettre d'indiquer un temps d'attente maximum, l'on surcharge le constructeur avec un nouveau
 paramètre.
