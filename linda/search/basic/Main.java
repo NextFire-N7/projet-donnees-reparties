@@ -15,7 +15,7 @@ public class Main {
         (new Thread(manager)).start();
         (new Thread(searcher)).start();
         (new Thread(searcher)).start();
-        // Manager manager2 = new Manager(linda, "words", "abricot");
-        // (new Thread(manager2)).start();
+        Manager manager2 = new Manager(linda, args[1], "abricot");
+        (new Thread(manager2)).start();
     }
 }

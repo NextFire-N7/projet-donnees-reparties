@@ -7,6 +7,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import linda.AsynchronousCallback;
 import linda.Callback;
 import linda.Linda;
 import linda.Tuple;
@@ -162,17 +163,19 @@ public class CentralizedLinda implements Linda {
 
     @Override
     public void eventRegister(eventMode mode, eventTiming timing, Tuple template, Callback callback) {
+        Callback asyncCallback = new AsynchronousCallback(callback);
+
         if (timing == eventTiming.IMMEDIATE) {
             // Si le timing est immédiat, on itère sur le space actuel et répond direct au
             // callback si on a trouvé un tuple correspondant
             Tuple match = tryTakeRead(template, mode);
             if (match != null) {
-                callback.call(match);
+                asyncCallback.call(match);
                 return;
             }
         }
         // Sinon on enregistre l'event en queue de la liste appropriée
-        Event event = new Event(template, callback);
+        Event event = new Event(template, asyncCallback);
         if (mode == eventMode.READ) {
             readEvents.add(event);
         } else if (mode == eventMode.TAKE) {
